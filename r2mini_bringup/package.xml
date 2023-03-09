@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>r2mini_bringup</name>
+  <version>0.0.0</version>
+  <description>Launch scripts for starting the r2mini.</description>
+  <maintainer email="kucira00@gmail.com">Dr.K</maintainer>
+  <license>Apache License, Version 2.0</license>
+
+  <depend>r2mini_description</depend>
+  <depend>r2mini_node</depend>
+  <depend>robot_state_publisher</depend>
+  <depend>rviz2</depend>
+  <depend>ydlidar_ros2_driver</depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>
