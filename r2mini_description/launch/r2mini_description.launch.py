@@ -25,8 +25,8 @@ def generate_launch_description():
     )
 
     robot_state_publisher_node = Node(
-        executable='robot_state_publisher',
         package='robot_state_publisher',
+        executable='robot_state_publisher',
         name='robot_state_publisher',
         parameters=[{'use_sim_time': use_sim_time}],
         arguments=[urdf_file_path],
