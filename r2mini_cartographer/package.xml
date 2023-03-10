@@ -8,6 +8,7 @@
   <license>Apache License, Version 2.0</license>
 
   <depend>cartographer_ros</depend>
+  <depend>rviz2</depend>
 
   <export>
     <build_type>ament_python</build_type>

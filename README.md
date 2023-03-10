@@ -12,31 +12,30 @@ ros2 pkg create r2mini --description "Meta package for r2mini." --license "Apach
 ros2 pkg create r2mini_bringup --description "Launch scripts for starting the r2mini." --license "Apache License, Version 2.0" --build-type ament_python --dependencies r2mini_description r2mini_node robot_state_publisher rviz2 ydlidar_ros2_driver --maintainer-email "kucira00@gmail.com" --maintainer-name "Dr.K"
 '''
 
-###r2mini_cartographer --ing
+###r2mini_cartographer
 '''
-ros2 pkg create r2mini_cartographer --description "Launch scripts for cartographer." --license "Apache License, Version 2.0" --build-type ament_python --dependencies cartographer_ros --maintainer-email "kucira00@gmail.com" --maintainer-name "Dr.K"
-'''
-
-###r2mini_description --ing
-'''
-ros2 pkg create r2mini_description --description "3D models of simulation and visualization for r2mini." --license "Apache License, Version 2.0" --build-type ament_python --dependencies urdf --maintainer-email "kucira00@gmail.com" --maintainer-name "Dr.K"
-'''
---dependencies rviz2 urdf xacro launch_ros robot_state_publisher joint_state_publisher_gui 
-
-###r2mini_navigation --ing
-'''
-ros2 pkg create r2mini_navigation --description "Launch scripts for navigation2." --license "Apache License, Version 2.0" --build-type ament_python --dependencies nav2_bringup --maintainer-email "kucira00@gmail.com" --maintainer-name "Dr.K"
+ros2 pkg create r2mini_cartographer --description "Launch scripts for cartographer." --license "Apache License, Version 2.0" --build-type ament_python --dependencies cartographer_ros rviz2 --maintainer-email "kucira00@gmail.com" --maintainer-name "Dr.K"
 '''
 
-###r2mini_node --ing
+###r2mini_description
 '''
-ros2 pkg create r2mini_node --description "Driver for r2mini." --license "Apache License, Version 2.0" --build-type ament_python --dependencies geometry_msgs message_filters rosidl_default_runtime tf2_ros_py --maintainer-email "kucira00@gmail.com" --maintainer-name "Dr.K"
+ros2 pkg create r2mini_description --description "3D models of simulation and visualization for r2mini." --license "Apache License, Version 2.0" --build-type ament_python --dependencies robot_state_publisher rviz2 urdf --maintainer-email "kucira00@gmail.com" --maintainer-name "Dr.K"
+'''
+
+###r2mini_navigation
+'''
+ros2 pkg create r2mini_navigation --description "Launch scripts for navigation2." --license "Apache License, Version 2.0" --build-type ament_python --dependencies nav2_bringup rviz2 --maintainer-email "kucira00@gmail.com" --maintainer-name "Dr.K"
+'''
+
+###r2mini_node
+'''
+ros2 pkg create r2mini_node --description "Driver for r2mini." --license "Apache License, Version 2.0" --build-type ament_python --dependencies geometry_msgs message_filters rosidl_default_runtime tf2_ros_py --maintainer-email "kucira00@gmail.com" --maintainer-name "Dr.K" --node-name r2mini_mcu
 '''
 --dependencies geometry_msgs message_filters nav_msgs rclpy sensor_msgs std_msgs std_srvs tf2_ros_py
 
 ###r2mini_teleop
 '''
-ros2 pkg create r2mini_teleop --description "Teleoperation node using keyboard for r2mini." --license "Apache License, Version 2.0" --build-type ament_python --dependencies rclpy geometry_msgs --maintainer-email "kucira00@gmail.com" --maintainer-name "Dr.K" --node-name "teleop_keyboard"
+ros2 pkg create r2mini_teleop --description "Teleoperation node using keyboard for r2mini." --license "Apache License, Version 2.0" --build-type ament_python --dependencies rclpy geometry_msgs --maintainer-email "kucira00@gmail.com" --maintainer-name "Dr.K" --node-name teleop_keyboard
 '''
 
 

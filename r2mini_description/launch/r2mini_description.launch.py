@@ -7,21 +7,21 @@ from launch.substitutions import LaunchConfiguration
 from ament_index_python.packages import get_package_share_directory
 
 def generate_launch_description():
+    ROBOT_MODEL = os.environ['ROBOT_MODEL']
     share_directory = get_package_share_directory('r2mini_description')
-    use_sim_time = LaunchConfiguration('use_sim_time')
     urdf_file_path = LaunchConfiguration('urdf_file_path')
-    urdf_file_name = 'r2mini.urdf'
+    use_sim_time = LaunchConfiguration('use_sim_time')
+
+    urdf_file_arg = DeclareLaunchArgument(
+        'urdf_file_path',
+        default_value=os.path.join(share_directory, 'urdf', ROBOT_MODEL + '.urdf'),
+        description='Argument for urdf_file_path'
+    )
 
     use_sim_time_arg = DeclareLaunchArgument(
         'use_sim_time',
         default_value='false',
-        description='Use simulation clock if true'
-    )
-
-    urdf_file_arg = DeclareLaunchArgument(
-        'urdf_file_path',
-        default_value=os.path.join(share_directory, 'urdf', urdf_file_name),
-        description='urdf file path'
+        description='Argument for use_sim_time'
     )
 
     robot_state_publisher_node = Node(
@@ -34,8 +34,8 @@ def generate_launch_description():
     )
 
     ld = LaunchDescription()
-    ld.add_action(use_sim_time_arg)
     ld.add_action(urdf_file_arg)
+    ld.add_action(use_sim_time_arg)
     ld.add_action(robot_state_publisher_node)
 
     return ld

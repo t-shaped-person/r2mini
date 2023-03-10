@@ -1,3 +1,5 @@
+import os # add
+from glob import glob # add
 from setuptools import setup
 
 package_name = 'r2mini_cartographer'
@@ -10,6 +12,9 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
+        (os.path.join('share', package_name, 'config'), glob('config/*')), # add
+        (os.path.join('share', package_name, 'launch'), glob('launch/*')), # add
+        (os.path.join('share', package_name, 'rviz'), glob('rviz/*')), # add
     ],
     install_requires=['setuptools'],
     zip_safe=True,

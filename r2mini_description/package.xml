@@ -7,8 +7,8 @@
   <maintainer email="kucira00@gmail.com">Dr.K</maintainer>
   <license>Apache License, Version 2.0</license>
 
-  <!-- <depend>robot_state_publisher</depend> -->
-  <!-- <depend>rviz2</depend> -->
+  <depend>robot_state_publisher</depend>
+  <depend>rviz2</depend>
   <depend>urdf</depend>
 
   <export>

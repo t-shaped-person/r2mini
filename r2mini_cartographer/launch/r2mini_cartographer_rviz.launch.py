@@ -7,13 +7,13 @@ from launch.substitutions import LaunchConfiguration
 from ament_index_python.packages import get_package_share_directory
 
 def generate_launch_description():
-    share_directory = get_package_share_directory('r2mini_description')
+    share_directory = get_package_share_directory('r2mini_cartographer')
     rviz_file = LaunchConfiguration('rviz_file')
     use_sim_time = LaunchConfiguration('use_sim_time')
 
     rviz_file_arg = DeclareLaunchArgument(
         'rviz_file',
-        default_value=os.path.join(share_directory, 'rviz', 'description.rviz'),
+        default_value=os.path.join(share_directory, 'rviz', 'cartographer.rviz'),
         description='Argument for rviz_file'
     )
 
