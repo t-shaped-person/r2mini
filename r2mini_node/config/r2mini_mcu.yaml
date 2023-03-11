@@ -1,4 +1,4 @@
-r2min_mcu:
+r2mini_mcu:
   ros__parameters:
     port:
       name: "/dev/ttyMCU" # ttyTHS1
@@ -14,7 +14,7 @@ r2min_mcu:
       max_rot_vel_z: 2.5 # 3.5rad/s
 
     sensor:
-      enc_pulse: 44.0 # 1440.0
+      enc_pulse: 1440.0 # 44.0, 1440.0
 
 diff_drive_controller:
   ros__parameters:
