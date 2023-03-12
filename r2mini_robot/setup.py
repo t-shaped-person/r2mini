@@ -2,7 +2,7 @@ import os # add
 from glob import glob # add
 from setuptools import setup
 
-package_name = 'r2mini_node'
+package_name = 'r2mini_robot'
 
 setup(
     name=package_name,
@@ -24,7 +24,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'r2mini_mcu = r2mini_node.r2mini_mcu:main'
+            'robot_control = r2mini_robot.robot_control:main'
         ],
     },
 )

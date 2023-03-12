@@ -1,7 +1,7 @@
-r2mini_mcu:
+robot_control:
   ros__parameters:
     port:
-      name: "/dev/ttyMCU" # ttyTHS1
+      name: "/dev/ttyMCU"
       baudrate: 115200
 
     wheel:

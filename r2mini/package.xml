@@ -11,7 +11,7 @@
   <depend>r2mini_cartographer</depend>
   <depend>r2mini_description</depend>
   <depend>r2mini_navigation</depend>
-  <depend>r2mini_node</depend>
+  <depend>r2mini_robot</depend>
   <depend>r2mini_teleop</depend>
 
   <export>

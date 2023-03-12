@@ -8,7 +8,7 @@
   <license>Apache License, Version 2.0</license>
 
   <depend>r2mini_description</depend>
-  <depend>r2mini_node</depend>
+  <depend>r2mini_robot</depend>
   <depend>robot_state_publisher</depend>
   <depend>rviz2</depend>
   <depend>ydlidar_ros2_driver</depend>

@@ -12,28 +12,24 @@ from ament_index_python.packages import get_package_share_directory
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 def generate_launch_description():
-    publish_period_sec = LaunchConfiguration('publish_period_sec', default='1.0')
-    publish_period_sec_arg = DeclareLaunchArgument('publish_period_sec', default_value=publish_period_sec)
+    ROBOT_MODEL = os.environ['ROBOT_MODEL']
 
-    resolution = LaunchConfiguration('resolution', default='0.05')
-    resolution_arg = DeclareLaunchArgument('resolution', default_value=resolution)
-    
     use_sim_time = LaunchConfiguration('use_sim_time', default='false')
     use_sim_time_arg = DeclareLaunchArgument('use_sim_time', default_value=use_sim_time)
 
-    occupancy_grid_node = Node(
-        package='cartographer_ros',
-        executable='occupancy_grid_node',
-        name='occupancy_grid_node',
+    with open(os.path.join(ThisLaunchFileDir(), 'urdf', ROBOT_MODEL+'.urdf'), 'r') as infp:
+        robot_description = infp.read()
+
+    robot_state_publisher_node = Node(
+        package='robot_state_publisher',
+        executable='robot_state_publisher',
+        name='robot_state_publisher',
         output='screen',
-        arguments=['-resolution', resolution, '-publish_period_sec', publish_period_sec],
-        parameters=[{'use_sim_time': use_sim_time}],
+        parameters=[{'robot_description': robot_description}, {'use_sim_time': use_sim_time}],
     )
 
     ld = LaunchDescription()
-    ld.add_action(publish_period_sec_arg)
-    ld.add_action(resolution_arg)
     ld.add_action(use_sim_time_arg)
-    ld.add_action(occupancy_grid_node)
+    ld.add_action(robot_state_publisher_node)
 
     return ld

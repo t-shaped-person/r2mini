@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>r2mini_node</name>
+  <name>r2mini_robot</name>
   <version>0.0.0</version>
   <description>Driver for r2mini.</description>
   <maintainer email="kucira00@gmail.com">Dr.K</maintainer>
@@ -11,6 +11,11 @@
   <depend>message_filters</depend>
   <depend>rosidl_default_runtime</depend>
   <depend>tf2_ros_py</depend>
+
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
 
   <export>
     <build_type>ament_python</build_type>
