@@ -14,10 +14,12 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 def generate_launch_description():
     ROBOT_MODEL = os.environ['ROBOT_MODEL']
 
+    cartographer_dir = get_package_share_directory('r2mini_cartographer')
+
     configuration_basename = LaunchConfiguration('configuration_basename', default=ROBOT_MODEL+'.lua')
     configuration_basename_arg = DeclareLaunchArgument('configuration_basename', default_value=configuration_basename)
 
-    configuration_directory = LaunchConfiguration('configuration_directory', default=os.path.join(ThisLaunchFileDir(), 'config'))
+    configuration_directory = LaunchConfiguration('configuration_directory', default=os.path.join(cartographer_dir, 'config'))
     configuration_directory_arg = DeclareLaunchArgument('configuration_directory', default_value=configuration_directory)
 
     publish_period_sec = LaunchConfiguration('publish_period_sec', default='1.0')
@@ -26,7 +28,7 @@ def generate_launch_description():
     resolution = LaunchConfiguration('resolution', default='0.05')
     resolution_arg = DeclareLaunchArgument('resolution', default_value=resolution)
 
-    rviz_file = LaunchConfiguration('rviz_file', default=os.path.join(ThisLaunchFileDir(), 'rviz', 'cartographer.rviz'))
+    rviz_file = LaunchConfiguration('rviz_file', default=os.path.join(cartographer_dir, 'rviz', 'cartographer.rviz'))
     rviz_file_arg = DeclareLaunchArgument('rviz_file', default_value=rviz_file)
 
     use_sim_time = LaunchConfiguration('use_sim_time', default='false')

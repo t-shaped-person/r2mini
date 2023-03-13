@@ -13,16 +13,17 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 def generate_launch_description():
     ROBOT_MODEL = os.environ['ROBOT_MODEL']
-    
+
+    navigation_dir = get_package_share_directory('r2mini_navigation')
     nav2_launch = os.path.join(get_package_share_directory('nav2_bringup'), 'launch')
 
-    map = LaunchConfiguration('map', default=os.path.join(ThisLaunchFileDir(), 'map', ROBOT_MODEL+'_world.yaml'))
+    map = LaunchConfiguration('map', default=os.path.join(navigation_dir, 'map', ROBOT_MODEL+'_world.yaml'))
     map_arg = DeclareLaunchArgument('map', default_value=map)
 
-    params_file = LaunchConfiguration('params_file', default=os.path.join(ThisLaunchFileDir(), 'config', ROBOT_MODEL+'.yaml'))
+    params_file = LaunchConfiguration('params_file', default=os.path.join(navigation_dir, 'config', ROBOT_MODEL+'.yaml'))
     params_file_arg = DeclareLaunchArgument('params_file', default_value=params_file)
 
-    rviz_file = LaunchConfiguration('rviz_file', default=os.path.join(ThisLaunchFileDir(), 'rviz', 'navigation.rviz'))
+    rviz_file = LaunchConfiguration('rviz_file', default=os.path.join(navigation_dir, 'rviz', 'navigation.rviz'))
     rviz_file_arg = DeclareLaunchArgument('rviz_file', default_value=rviz_file)
 
     use_sim_time = LaunchConfiguration('use_sim_time', default='false')

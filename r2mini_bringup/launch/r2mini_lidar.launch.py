@@ -14,7 +14,9 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 def generate_launch_description():
     LIDAR_MODEL = os.environ['LIDAR_MODEL']
 
-    lidar_yaml = LaunchConfiguration('lidar_config', default=os.path.join(ThisLaunchFileDir(), 'config', LIDAR_MODEL + '.yaml'))
+    bringup_dir = get_package_share_directory('r2mini_bringup')
+
+    lidar_yaml = LaunchConfiguration('lidar_yaml', default=os.path.join(bringup_dir, 'config', LIDAR_MODEL+'.yaml'))
     lidar_yaml_arg = DeclareLaunchArgument('lidar_yaml', default_value=lidar_yaml)
 
     lidar_node = LifecycleNode(

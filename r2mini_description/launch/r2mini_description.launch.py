@@ -14,16 +14,18 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 def generate_launch_description():
     ROBOT_MODEL = os.environ['ROBOT_MODEL']
 
-    rviz_file = LaunchConfiguration('rviz_file', default=os.path.join(ThisLaunchFileDir(), 'rviz', 'description.rviz'))
+    description_dir = get_package_share_directory('r2mini_description')
+
+    rviz_file = LaunchConfiguration('rviz_file', default=os.path.join(description_dir, 'rviz', 'description.rviz'))
     rviz_file_arg = DeclareLaunchArgument('rviz_file', default_value=rviz_file)
     
-    urdf_file = LaunchConfiguration('urdf_file', default=os.path.join(ThisLaunchFileDir(), 'urdf', ROBOT_MODEL + '.urdf'))
+    urdf_file = LaunchConfiguration('urdf_file', default=os.path.join(description_dir, 'urdf', ROBOT_MODEL+'.urdf'))
     urdf_file_arg = DeclareLaunchArgument('urdf_file', default_value=urdf_file)
 
     use_sim_time = LaunchConfiguration('use_sim_time', default='false')
     use_sim_time_arg = DeclareLaunchArgument('use_sim_time', default_value=use_sim_time)
 
-    with open(os.path.join(ThisLaunchFileDir(), 'urdf', ROBOT_MODEL+'.urdf'), 'r') as infp:
+    with open(os.path.join(description_dir, 'urdf', ROBOT_MODEL+'.urdf'), 'r') as infp:
         robot_description = infp.read()
 
     robot_state_publisher_node = IncludeLaunchDescription(

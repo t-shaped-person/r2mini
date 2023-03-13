@@ -1,6 +1,6 @@
-import math
-import time
+import os
 import rclpy
+from .robot_driver import *
 from rclpy.node import Node
 from nav_msgs.msg import Odometry
 from rclpy.logging import get_logger
@@ -9,91 +9,55 @@ from tf2_ros import TransformBroadcaster
 from sensor_msgs.msg import Imu, JointState
 from geometry_msgs.msg import Twist, Pose, TransformStamped
 
-from .driver.quaternion_from_euler import *
-from .driver.packet_handler import PacketHandler
-
-class OdomPose():
-    x = 0.0
-    y = 0.0
-    theta = 0.0
-    timestamp = 0
-    pre_timestamp = 0
-
-class OdomVel():
-    x = 0.0
-    y = 0.0
-    w = 0.0
-
-class Joint():
-    joint_name = ['wheel_left_joint', 'wheel_right_joint']
-    joint_pos = [0.0, 0.0]
-    joint_vel = [0.0, 0.0]
-
-class ComplementaryFilter():
-    def __init__(self):
-        self.theta = 0.
-        self.pre_theta = 0.
-        self.wheel_ang = 0.
-        self.filter_coef = 2.5
-        self.gyro_bias = 0.
-        self.count_for_gyro_bias = 110
-
-    def gyro_calibration(self, gyro):
-        self.count_for_gyro_bias -= 1
-
-        if self.count_for_gyro_bias > 100:
-            return "Prepare for gyro_calibration"
-
-        self.gyro_bias += gyro
-        if self.count_for_gyro_bias == 1:
-            self.gyro_bias /= 100
-            self.get_logger().info('Complete : Gyro calibration')
-            return "gyro_calibration OK"
-
-        return "During gyro_calibration"
-
-    def calc_filter(self, gyro, d_time):
-        if self.count_for_gyro_bias != 1:
-            tmp = self.gyro_calibration(gyro)
-            return 0
-
-        gyro -= self.gyro_bias
-        self.pre_theta = self.theta
-        temp = -1/self.filter_coef * (-self.wheel_ang + self.pre_theta) + gyro
-        self.theta = self.pre_theta + temp*d_time
-        #print self.theta*180/3.141, self.wheel_ang*180/3.141, gyro, d_time
-        return self.theta
-
-class OMOR1MiniNode(Node):
+class RobotControl(Node):
     def __init__(self):
         super().__init__('robot_control')
-        # Declare parameters from YAML
+        print('where am i_3')
         self.declare_parameters(
             namespace='',
             parameters=[
                 ('port.name', None),
                 ('port.baudrate', None),
+                ('wheel.separation', None),
+                ('wheel.radius', None),
                 ('motor.gear_ratio', None),
-                ('motor.max_lin_vel_x', None),
-                ('sensor.enc_pulse', None),
+                ('motor.max_lin_vel', None),
+                ('motor.max_ang_vel', None),
+                ('sensor.old_enc_pulse', None),
+                ('sensor.new_enc_pulse', None),
             ]
         )
-        # Get parameter values
-        _port_name = self.get_parameter_or('port.name', Parameter('port.name', Parameter.Type.STRING, '/dev/ttyTHS1')).get_parameter_value().string_value
-        _port_baudrate = self.get_parameter_or('port.baudrate', Parameter('port.baudrate', Parameter.Type.INTEGER, 115200)).get_parameter_value().integer_value
-        self.gear_ratio = self.get_parameter_or('motor.gear_ratio', Parameter('motor.gear_ratio', Parameter.Type.DOUBLE, 21.3)).get_parameter_value().double_value
-        self.wheel_separation = self.get_parameter_or('wheel.separation', Parameter('wheel.separation', Parameter.Type.DOUBLE, 0.17)).get_parameter_value().double_value # 0.085 cm x 2
-        self.wheel_radius = self.get_parameter_or('wheel.radius', Parameter('wheel.radius', Parameter.Type.DOUBLE, 0.0335)).get_parameter_value().double_value
-        self.enc_pulse = self.get_parameter_or('sensor.enc_pulse', Parameter('sensor.enc_pulse', Parameter.Type.DOUBLE, 44.0)).get_parameter_value().double_value
-        self.use_gyro = self.get_parameter_or('sensor.use_gyro', Parameter('sensor.use_gyro', Parameter.Type.BOOL, False)).get_parameter_value().bool_value
-        print('GEAR RATIO:\t\t%s'%(self.gear_ratio))
-        print('WHEEL SEPARATION:\t%s'%(self.wheel_separation))
-        print('WHEEL RADIUS:\t\t%s'%(self.wheel_radius))
-        print('ENC_PULSES:\t\t%s'%(self.enc_pulse))
-        self.distance_per_pulse = 2*math.pi*self.wheel_radius / self.enc_pulse / self.gear_ratio
-        print('DISTANCE PER PULSE \t:%s'%(self.distance_per_pulse))
+        print('where am i_4')
+        port_name = self.get_parameter_or('port.name', Parameter('port.name', Parameter.Type.STRING, '/dev/ttyMCU1')).get_parameter_value().string_value
+        port_baudrate = self.get_parameter_or('port.baudrate', Parameter('port.baudrate', Parameter.Type.INTEGER, 1152001)).get_parameter_value().integer_value
+        print('where am i_5')
+        self.wheel_separation = self.get_parameter_or('wheel.separation', Parameter('wheel.separation', Parameter.Type.DOUBLE, 0.171)).get_parameter_value().double_value
+        self.wheel_radius = self.get_parameter_or('wheel.radius', Parameter('wheel.radius', Parameter.Type.DOUBLE, 0.03351)).get_parameter_value().double_value
+        print('where am i_6')
+        self.gear_ratio = self.get_parameter_or('motor.gear_ratio', Parameter('motor.gear_ratio', Parameter.Type.DOUBLE, 21.31)).get_parameter_value().double_value
+        self.max_lin_vel = self.get_parameter_or('motor.max_lin_vel', Parameter('motor.max_lin_vel', Parameter.Type.DOUBLE, 2.01)).get_parameter_value().double_value
+        self.max_ang_vel = self.get_parameter_or('motor.max_ang_vel', Parameter('motor.max_ang_vel', Parameter.Type.DOUBLE, 2.51)).get_parameter_value().double_value
+        print('where am i_7')
+        if os.environ['MOTOR_MODEL'] == 'old':
+            self.enc_pulse = self.get_parameter_or('sensor.old_enc_pulse', Parameter('sensor.old_enc_pulse', Parameter.Type.DOUBLE, 44.01)).get_parameter_value().double_value
+        elif os.environ['MOTOR_MODEL'] == 'new':
+            self.enc_pulse = self.get_parameter_or('sensor.new_enc_pulse', Parameter('sensor.new_enc_pulse', Parameter.Type.DOUBLE, 1440.01)).get_parameter_value().double_value
+        print('where am i_8')
+        
+        print(f'port.name:\t\t{port_name}')
+        print(f'port.baudrate:\t{port_baudrate}')
+        print(f'wheel.separation:\t{self.wheel_separation}')
+        print(f'wheel.radius:\t\t{self.wheel_radius}')
+        print(f'motor.gear_ratio:\t{self.gear_ratio}')
+        print(f'motor.max_lin_vel:\t{self.max_lin_vel}')
+        print(f'motor.max_ang_vel:\t{self.max_ang_vel}')
+        print(f'sensor.enc_pulse:\t{self.enc_pulse}')
+
+        self.distance_per_pulse = 2 * math.pi * self.wheel_radius / self.enc_pulse / self.gear_ratio
+        print(f'distance per pulse:\t{self.distance_per_pulse}')
+        
         # Packet handler
-        self.ph = PacketHandler(_port_name, _port_baudrate)
+        self.ph = PacketHandler(port_name, port_baudrate)
         self.calc_yaw = ComplementaryFilter()
         self.ph.robot_state = {
             "VW" : [0., 0.],
@@ -103,10 +67,7 @@ class OMOR1MiniNode(Node):
             "POSE" : [0., 0., 0.],
             "BAT" : [0., 0., 0.],
         }
-        self.ph.incomming_info = ['ODO', 'VW', "POSE", "GYRO"]
-        self.ph.set_periodic_info(50)
-        self.max_lin_vel_x = self.get_parameter_or('/motor/max_lin_vel_x', Parameter('/motor/max_lin_vel_x', Parameter.Type.DOUBLE, 1.2)).get_parameter_value().double_value
-        self.max_ang_vel_z = self.get_parameter_or('/motor/max_ang_vel_z', Parameter('/motor/max_ang_vel_z', Parameter.Type.DOUBLE, 2.5)).get_parameter_value().double_value
+        
         self.odom_pose = OdomPose()
         self.odom_pose.timestamp = self.get_clock().now()
         self.odom_pose.pre_timestamp = self.get_clock().now()
@@ -121,16 +82,10 @@ class OMOR1MiniNode(Node):
         self.pub_OdomTF = TransformBroadcaster(self)
         self.pub_pose = self.create_publisher(Pose, 'pose', 10)
         # Set Periodic data
-        self.ph.incomming_info = ['ODO', 'VW', "POSE", "GYRO"]
-        self.ph.update_battery_state()
-        #self.ph.set_periodic_info()
-        time.sleep(0.01)
         self.ph.set_periodic_info(50)
+        self.ph.update_battery_state()
         # Set timer proc
         self.timerProc = self.create_timer(0.01, self.update_robot)
-
-    # def convert2odo_from_each_wheel(self, enc_l, enc_r):
-    #     return enc_l * self.distance_per_pulse, enc_r * self.distance_per_pulse
 
     def update_odometry(self, odo_l, odo_r, trans_vel, orient_vel, vel_z):
         odo_l /= 1000.
@@ -229,49 +184,21 @@ class OMOR1MiniNode(Node):
     def cbCmdVelMsg(self, cmd_vel_msg):
         lin_vel_x = cmd_vel_msg.linear.x
         ang_vel_z = cmd_vel_msg.angular.z
-        lin_vel_x = max(-self.max_lin_vel_x, min(self.max_lin_vel_x, lin_vel_x))
-        ang_vel_z = max(-self.max_ang_vel_z, min(self.max_ang_vel_z, ang_vel_z))
-        self.ph.write_base_velocity(lin_vel_x*1000, ang_vel_z*1000)
-
-    # def cbSrv_headlight(self, request, response):
-    #     onoff = '0'
-    #     if request.set == True:
-    #         onoff = '1'
-    #     command = "$cHDLT," + onoff
-    #     self.ph.write_port(command)
-    #     print('SERVICE: Headlight: %s'%(onoff))
-    #     return response
-    
-    # def cbSrv_setColor(self, request, response):
-    #     command = "$cCOLOR,"+str(request.red) + ','+str(request.green) + ','+str(request.blue)
-    #     print("SERVICE: SET COLOR: R(%s)G(%s)B(%s)" %(request.red, request.green, request.blue))
-    #     return response
-
-    # def cbSrv_checkBattery(self, request, response):
-    #     self.ph.update_battery_state()
-    #     bat_status = self.ph.get_battery_status()
-    #     if len(bat_status) == 3:
-    #         print("SERVICE: Battery V:%s, SOC: %s, Current %s" %(bat_status[0], bat_status[1], bat_status[2]))
-    #         response.volt  = bat_status[0]*0.1
-    #         response.soc = bat_status[1]
-    #         response.current = bat_status[2]*0.001
-    #         return response
-
-    # def cbSrv_resetODOM(self, request, response):
-    #     self.odom_pose.x = request.x
-    #     self.odom_pose.y = request.y
-    #     self.odom_pose.theta = request.theta
-    #     print("SERVICE: RESET ODOM X:%s, Y:%s, Theta:%s" %(request.x, request.y, request.theta))
-    #     return response
+        lin_vel_x = max(-self.max_lin_vel, min(self.max_lin_vel, lin_vel_x))
+        ang_vel_z = max(-self.max_ang_vel, min(self.max_ang_vel, ang_vel_z))
+        self.ph.vw_command(lin_vel_x*1000, ang_vel_z*1000)
 
 def main(args=None):
+    print('where am i_1')
     rclpy.init(args=args)
-    node = OMOR1MiniNode()
+    print('where am i_2')
+    node = RobotControl()
     try:
         rclpy.spin(node)
     except Exception as e:
         print(e)
     finally:
+        node.ph.close_port()
         node.destroy_node()
         rclpy.shutdown()
 

@@ -13,8 +13,15 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 def generate_launch_description():
     
-    teleop_keyboard = ExecuteProcess(
-        cmd=['ros2', 'run', 'r2mini_teleop', 'teleop_keyboard'],
+    # teleop_keyboard = ExecuteProcess(
+    #     cmd=['ros2', 'run', 'r2mini_teleop', 'teleop_keyboard'],
+    #     output='screen',
+    # )
+
+    teleop_keyboard = Node(
+        package='r2mini_teleop',
+        executable='teleop_keyboard',
+        name='teleop_keyboard',
         output='screen',
     )
 

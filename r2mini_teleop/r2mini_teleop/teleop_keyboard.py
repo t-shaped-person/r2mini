@@ -38,20 +38,20 @@ class TeleopKeyboard(Node):
 
     def publish(self, msg):
         self.publisher.publish(msg)
-    
+
     def print(self, str_info):
         self.get_logger().info(str_info)
-    
+
     def constrain(self, vel, min_vel, max_vel):
         return min(max_vel, max(min_vel, vel))
-    
+
     def keyin(self):
         tty.setraw(sys.stdin.fileno())
         select.select([sys.stdin], [], [], 0.1)
         key = sys.stdin.read(1)
         termios.tcsetattr(sys.stdin, termios.TCSADRAIN, self.settings)
         return key
-    
+
     def smooth_accel_decel(self, current_vel, target_vel, slop):
         if target_vel > current_vel:
             current_vel = min(target_vel, current_vel + slop)

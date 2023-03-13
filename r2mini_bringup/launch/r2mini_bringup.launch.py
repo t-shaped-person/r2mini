@@ -14,20 +14,23 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 def generate_launch_description():
     LIDAR_MODEL = os.environ['LIDAR_MODEL']
     ROBOT_MODEL = os.environ['ROBOT_MODEL']
-    
-    description_launch = os.path.join(get_package_share_directory('r2mini_description'), 'launch', 'robot_state_publisher.launch.py')
-    robot_launch = os.path.join(get_package_share_directory('r2mini_robot'), 'launch', 'r2mini_robot.launch.py')
 
-    lidar_yaml = LaunchConfiguration('lidar_yaml', default=os.path.join(ThisLaunchFileDir(), 'config', LIDAR_MODEL+'.yaml'))
+    bringup_dir = get_package_share_directory('r2mini_bringup')
+    description_dir = get_package_share_directory('r2mini_description')
+    robot_dir = get_package_share_directory('r2mini_robot')
+    description_launch = os.path.join(description_dir, 'launch', 'robot_state_publisher.launch.py')
+    robot_launch = os.path.join(robot_dir, 'launch', 'r2mini_robot.launch.py')
+
+    lidar_yaml = LaunchConfiguration('lidar_yaml', default=os.path.join(bringup_dir, 'config', LIDAR_MODEL+'.yaml'))
     lidar_yaml_arg = DeclareLaunchArgument('lidar_yaml', default_value=lidar_yaml)
 
-    robot_yaml = LaunchConfiguration('robot_yaml', default=os.path.join(get_package_share_directory('r2mini_robot'), 'config', ROBOT_MODEL+'.yaml'))
+    robot_yaml = LaunchConfiguration('robot_yaml', default=os.path.join(robot_dir, 'config', ROBOT_MODEL+'.yaml'))
     robot_yaml_arg = DeclareLaunchArgument('robot_yaml', default_value=robot_yaml)
 
     use_sim_time = LaunchConfiguration('use_sim_time', default='false')
     use_sim_time_arg = DeclareLaunchArgument('use_sim_time', default_value=use_sim_time)
 
-    with open(os.path.join(ThisLaunchFileDir(), 'urdf', ROBOT_MODEL+'.urdf'), 'r') as infp:
+    with open(os.path.join(description_dir, 'urdf', ROBOT_MODEL+'.urdf'), 'r') as infp:
         robot_description = infp.read()
 
     robot_node = IncludeLaunchDescription(
@@ -36,7 +39,7 @@ def generate_launch_description():
     )
 
     lidar_node = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([ThisLaunchFileDir(), '/launch/r2mini_lidar.launch.py']),
+        PythonLaunchDescriptionSource([bringup_dir, '/launch/r2mini_lidar.launch.py']),
         launch_arguments={'lidar_yaml': lidar_yaml}.items(),
     )
 

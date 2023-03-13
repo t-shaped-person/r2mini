@@ -1,7 +1,7 @@
 robot_control:
   ros__parameters:
     port:
-      name: "/dev/ttyMCU"
+      name: '/dev/ttyMCU'
       baudrate: 115200
 
     wheel:
@@ -10,11 +10,12 @@ robot_control:
 
     motor:
       gear_ratio: 21.3
-      max_lin_vel_x: 2.0 # 0.3m/s
-      max_rot_vel_z: 2.5 # 3.5rad/s
+      max_lin_vel: 2.0
+      max_ang_vel: 2.5
 
     sensor:
-      enc_pulse: 1440.0 # 44.0, 1440.0
+      old_enc_pulse: 44.0
+      new_enc_pulse: 1440.0
 
 diff_drive_controller:
   ros__parameters:
