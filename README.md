@@ -29,7 +29,7 @@ ros2 pkg create r2mini_navigation --description "Launch scripts for navigation2.
 
 ###r2mini_robot
 '''
-ros2 pkg create r2mini_robot --description "Driver for r2mini." --license "Apache License, Version 2.0" --build-type ament_python --dependencies geometry_msgs message_filters rosidl_default_runtime tf2_ros_py --maintainer-email "kucira00@gmail.com" --maintainer-name "Dr.K" --node-name robot_control
+ros2 pkg create r2mini_robot --description "Driver for r2mini." --license "Apache License, Version 2.0" --build-type ament_python --dependencies geometry_msgs message_filters rclpy rosidl_default_runtime tf2_ros_py --maintainer-email "kucira00@gmail.com" --maintainer-name "Dr.K" --node-name robot_control
 '''
 --dependencies geometry_msgs message_filters nav_msgs rclpy sensor_msgs std_msgs std_srvs tf2_ros_py
 

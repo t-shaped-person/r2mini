@@ -1,118 +1,188 @@
-#!/usr/bin/env python3
-import sys
-import tty
-import rclpy
+import os
 import select
-import termios
-from rclpy.node import Node
-from rclpy.qos import QoSProfile
+import sys
+import rclpy
+
 from geometry_msgs.msg import Twist
+from rclpy.qos import QoSProfile
 
-# MAX_LIN_VEL = 0.4                                                               # 0.4m/s (400mm/s)
-# MAX_ANG_VEL = 4.7                                                               # 4.7rad/s (wheel speed: 0.3995m/s = 0.17/2*4.7)
-MAX_LIN_VEL = 0.3                                                               # 0.3m/s (300mm/s)
-MAX_ANG_VEL = 3.5                                                               # 3.5rad/s (wheel speed: 0.2975m/s = 0.17/2*3.5)
-STEP_LIN_VEL = 0.01                                                             # 0.01m/s step (10mm/s)
-STEP_ANG_VEL = 0.1                                                              # 5.73degree step (wheel speed 0.0085m/s)
+if os.name == 'nt':
+    import msvcrt
+else:
+    import termios
+    import tty
 
-msg = '''
-Control your omo_r2mini~~
-----------------------------------------------------------------------
+OMO_R1MINI_MAX_LIN_VEL = 0.50
+OMO_R1MINI_MAX_ANG_VEL = 5.70
+
+LIN_VEL_STEP_SIZE = 0.01
+ANG_VEL_STEP_SIZE = 0.1
+
+msg = """
+Control Your OMORobot R1 Mini!
+---------------------------
 Moving around:
         w
-    a   s   d
+   a    s    d
         x
-w/x: increase/decrease linear velocity (omo_r2mini: ~0.3m/s)
-a/d: increase/decrease angular velocity (omo_r2mini: ~3.5rad/s)
-space, s: force stop
-----------------------------------------------------------------------
-CTRL+C to quit
-'''
 
-class TeleopKeyboard(Node):
-    def __init__(self):
-        super().__init__('teleop_keyboard')                                     # node name
-        qos_profile = QoSProfile(depth=10)                                      # que size 10
-        self.publisher = self.create_publisher(Twist, 'cmd_vel', qos_profile)   # message type: Twist, topic name: cmd_vel
-        self.settings = termios.tcgetattr(sys.stdin)
+w/x : increase/decrease linear velocity (Burger : ~ 0.22, Waffle and Waffle Pi : ~ 0.26)
+a/d : increase/decrease angular velocity (Burger : ~ 2.84, Waffle and Waffle Pi : ~ 1.82)
 
-    def publish(self, msg):
-        self.publisher.publish(msg)
+space key, s : force stop
 
-    def print(self, str_info):
-        self.get_logger().info(str_info)
+CTRL-C to quit
+"""
 
-    def constrain(self, vel, min_vel, max_vel):
-        return min(max_vel, max(min_vel, vel))
+e = """
+Communications Failed
+"""
 
-    def keyin(self):
-        tty.setraw(sys.stdin.fileno())
-        select.select([sys.stdin], [], [], 0.1)
+
+def get_key(settings):
+    if os.name == 'nt':
+        return msvcrt.getch().decode('utf-8')
+    tty.setraw(sys.stdin.fileno())
+    rlist, _, _ = select.select([sys.stdin], [], [], 0.1)
+    if rlist:
         key = sys.stdin.read(1)
-        termios.tcsetattr(sys.stdin, termios.TCSADRAIN, self.settings)
-        return key
+    else:
+        key = ''
 
-    def smooth_accel_decel(self, current_vel, target_vel, slop):
-        if target_vel > current_vel:
-            current_vel = min(target_vel, current_vel + slop)
-        elif target_vel < current_vel:
-            current_vel = max(target_vel, current_vel - slop)
-        else:
-            current_vel = target_vel
-        return current_vel
+    termios.tcsetattr(sys.stdin, termios.TCSADRAIN, settings)
+    return key
 
-def main(args=None):
-    rclpy.init(args=args)
-    node = TeleopKeyboard()
-    keyin_cnt = 0
-    target_lin_vel, target_ang_vel, current_lin_vel, current_ang_vel = 0.0, 0.0, 0.0, 0.0
-    twist = Twist()
+
+def print_vels(target_linear_velocity, target_angular_velocity):
+    print('currently:\tlinear velocity {0}\t angular velocity {1} '.format(
+        target_linear_velocity,
+        target_angular_velocity))
+
+
+def make_simple_profile(output, input, slop):
+    if input > output:
+        output = min(input, output + slop)
+    elif input < output:
+        output = max(input, output - slop)
+    else:
+        output = input
+
+    return output
+
+
+def constrain(input_vel, low_bound, high_bound):
+    if input_vel < low_bound:
+        input_vel = low_bound
+    elif input_vel > high_bound:
+        input_vel = high_bound
+    else:
+        input_vel = input_vel
+
+    return input_vel
+
+
+def check_linear_limit_velocity(velocity):
+    return constrain(velocity, -OMO_R1MINI_MAX_LIN_VEL, OMO_R1MINI_MAX_LIN_VEL)
+
+
+def check_angular_limit_velocity(velocity):
+    return constrain(velocity, -OMO_R1MINI_MAX_ANG_VEL, OMO_R1MINI_MAX_ANG_VEL)
+
+
+def main():
+    settings = None
+    if os.name != 'nt':
+        settings = termios.tcgetattr(sys.stdin)
+
+    rclpy.init()
+
+    qos = QoSProfile(depth=10)
+    node = rclpy.create_node('teleop_keyboard')
+    pub = node.create_publisher(Twist, 'cmd_vel', qos)
+
+    status = 0
+    target_linear_velocity = 0.0
+    target_angular_velocity = 0.0
+    control_linear_velocity = 0.0
+    control_angular_velocity = 0.0
+
     try:
         print(msg)
-        while True:
-            key = node.keyin()
-            if key == 'w' or key.lower() == 'w':
-                target_lin_vel = node.constrain(target_lin_vel+STEP_LIN_VEL, -MAX_LIN_VEL, MAX_LIN_VEL)
-                keyin_cnt += 1
-                node.print(f'current velocity > linear {target_lin_vel:.2f},\t angular {target_ang_vel:.2f}')
-            elif key == 'x' or key.lower() == 'x':
-                target_lin_vel = node.constrain(target_lin_vel-STEP_LIN_VEL, -MAX_LIN_VEL, MAX_LIN_VEL)
-                keyin_cnt += 1
-                node.print(f'current velocity > linear {target_lin_vel:.2f},\t angular {target_ang_vel:.2f}')
-            elif key == 'a' or key.lower() == 'a':
-                target_ang_vel = node.constrain(target_ang_vel+STEP_ANG_VEL, -MAX_ANG_VEL, MAX_ANG_VEL)
-                keyin_cnt += 1
-                node.print(f'current velocity > linear {target_lin_vel:.2f},\t angular {target_ang_vel:.2f}')
-            elif key == 'd' or key.lower() == 'd':
-                target_ang_vel = node.constrain(target_ang_vel-STEP_ANG_VEL, -MAX_ANG_VEL, MAX_ANG_VEL)
-                keyin_cnt += 1
-                node.print(f'current velocity > linear {target_lin_vel:.2f},\t angular {target_ang_vel:.2f}')
-            elif key == ' ' or key == 's' or key.lower() == 's':
-                target_lin_vel, target_ang_vel, current_lin_vel, current_ang_vel = 0.0, 0.0, 0.0, 0.0
-                keyin_cnt += 1
-                node.print(f'current velocity > linear {target_lin_vel:.2f},\t angular {target_ang_vel:.2f}')
+        while(1):
+            key = get_key(settings)
+            if key == 'w':
+                target_linear_velocity =\
+                    check_linear_limit_velocity(target_linear_velocity + LIN_VEL_STEP_SIZE)
+                status = status + 1
+                print_vels(target_linear_velocity, target_angular_velocity)
+            elif key == 'x':
+                target_linear_velocity =\
+                    check_linear_limit_velocity(target_linear_velocity - LIN_VEL_STEP_SIZE)
+                status = status + 1
+                print_vels(target_linear_velocity, target_angular_velocity)
+            elif key == 'a':
+                target_angular_velocity =\
+                    check_angular_limit_velocity(target_angular_velocity + ANG_VEL_STEP_SIZE)
+                status = status + 1
+                print_vels(target_linear_velocity, target_angular_velocity)
+            elif key == 'd':
+                target_angular_velocity =\
+                    check_angular_limit_velocity(target_angular_velocity - ANG_VEL_STEP_SIZE)
+                status = status + 1
+                print_vels(target_linear_velocity, target_angular_velocity)
+            elif key == ' ' or key == 's':
+                target_linear_velocity = 0.0
+                control_linear_velocity = 0.0
+                target_angular_velocity = 0.0
+                control_angular_velocity = 0.0
+                print_vels(target_linear_velocity, target_angular_velocity)
             else:
-                if key == '\x03':
+                if (key == '\x03'):
                     break
-            
-            if keyin_cnt == 20:
+
+            if status == 20:
                 print(msg)
-                keyin_cnt = 0
-            
-            current_lin_vel = node.smooth_accel_decel(current_lin_vel, target_lin_vel, (STEP_LIN_VEL/10))
-            twist.linear.x, twist.linear.y, twist.linear.z = current_lin_vel, 0.0, 0.0
-            current_ang_vel = node.smooth_accel_decel(current_ang_vel, target_ang_vel, (STEP_ANG_VEL / 10.0))
-            twist.angular.x, twist.angular.y, twist.angular.z = 0.0, 0.0, current_ang_vel
-            node.publish(twist)
+                status = 0
+
+            twist = Twist()
+
+            control_linear_velocity = make_simple_profile(
+                control_linear_velocity,
+                target_linear_velocity,
+                (LIN_VEL_STEP_SIZE / 2.0))
+
+            twist.linear.x = control_linear_velocity
+            twist.linear.y = 0.0
+            twist.linear.z = 0.0
+
+            control_angular_velocity = make_simple_profile(
+                control_angular_velocity,
+                target_angular_velocity,
+                (ANG_VEL_STEP_SIZE / 2.0))
+
+            twist.angular.x = 0.0
+            twist.angular.y = 0.0
+            twist.angular.z = control_angular_velocity
+
+            pub.publish(twist)
+
     except Exception as e:
         print(e)
+
     finally:
-        twist.linear.x, twist.linear.y, twist.linear.z = 0.0, 0.0, 0.0
-        twist.angular.x, twist.angular.y, twist.angular.z = 0.0, 0.0, 0.0
-        node.publish(twist)
-        node.destroy_node()
-        rclpy.shutdown()
-        termios.tcsetattr(sys.stdin, termios.TCSADRAIN, node.settings)
+        twist = Twist()
+        twist.linear.x = 0.0
+        twist.linear.y = 0.0
+        twist.linear.z = 0.0
+
+        twist.angular.x = 0.0
+        twist.angular.y = 0.0
+        twist.angular.z = 0.0
+
+        pub.publish(twist)
+
+        if os.name != 'nt':
+            termios.tcsetattr(sys.stdin, termios.TCSADRAIN, settings)
 
 
 if __name__ == '__main__':
